@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>quitafondos 67 · Retalla i esborra el fons</title>
+<link rel="icon" href="/_blob/14e37c64f90317ea79a9bad3f884fe44">
+<meta name="description" content="Retalla les teves fotos i esborra el fons a mà amb un pinzell, gratis i sense registre. Tot es fa al teu navegador.">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+  body{min-height:100vh;background:linear-gradient(-45deg,#0a2a6b,#1f5eff,#3b82f6,#0b3d91);background-size:400% 400%;animation:bgshift 14s ease infinite;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @keyframes bgshift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @media (prefers-reduced-motion:reduce){body{animation:none}}
+  .glass{background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);border-radius:1rem}
+  .btn{transition:all .2s ease;border-radius:.75rem;padding:.65rem 1.1rem;font-weight:600}
+  .btn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.08)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-white{background:#fff;color:#1f5eff}
+  .btn-ghost{border:1px solid rgba(255,255,255,.5);color:#fff}
+  .chip{border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:.4rem .95rem;font-size:.875rem;font-weight:600;transition:all .2s ease}
+  .chip.on{background:#fff;color:#1f5eff}
+  #stage{position:relative;display:inline-block;max-width:100%;overflow:hidden;border-radius:.5rem;user-select:none;touch-action:none;background-color:#fff;background-image:linear-gradient(45deg,#e5e7eb 25%,transparent 25%),linear-gradient(-45deg,#e5e7eb 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e5e7eb 75%),linear-gradient(-45deg,transparent 75%,#e5e7eb 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+  #pic{display:block;max-width:100%;max-height:62vh;width:auto;height:auto;touch-action:none}
+  #crop{position:absolute;box-sizing:border-box;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(5,15,40,.6);cursor:move;touch-action:none;background-image:linear-gradient(to right,rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.35) 1px,transparent 1px);background-size:33.33% 100%,100% 33.33%}
+  .h{position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 0 0 3px #1f5eff;transform:translate(-50%,-50%)}
+  .h.nw{left:0;top:0;cursor:nwse-resize}
+  .h.se{left:100%;top:100%;cursor:nwse-resize}
+  .h.ne{left:100%;top:0;cursor:nesw-resize}
+  .h.sw{left:0;top:100%;cursor:nesw-resize}
+  #marker{position:absolute;display:none;pointer-events:none;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #1f5eff;transform:translate(-50%,-50%);background:rgba(31,94,255,.15);z-index:5}
+  #drop{transition:background .2s ease}
+</style>
+</head>
+<body class="px-4 pb-16">
+
+<header class="mx-auto flex max-w-4xl items-center justify-between py-5">
+  <a href="#" class="flex items-center gap-2 text-lg font-bold">
+    <img src="/_blob/14e37c64f90317ea79a9bad3f884fe44" alt="Logo quitafondos 67" class="h-10 w-10 rounded-xl object-cover shadow-lg">quitafondos 67
+  </a>
+</header>
+
+<main class="mx-auto max-w-4xl">
+  <section class="pt-6 text-center">
+    <h1 class="text-3xl font-extrabold tracking-tight md:text-5xl">Retalla i esborra el fons</h1>
+    <p class="mx-auto mt-4 max-w-xl text-white/85">Retalla la foto amb un marc o esborra el fons a mà amb un pinzell. Gratis, sense registre i sense marques d'aigua.</p>
+  </section>
+
+  <section id="empty" class="mt-10">
+    <div id="drop" class="glass cursor-pointer border-2 border-dashed p-12 text-center hover:bg-white/20">
+      <p class="text-lg font-semibold">Arrossega una foto aquí</p>
+      <p class="mt-1 text-sm text-white/80">o fes clic per seleccionar-la · JPG, PNG, WEBP, BMP o GIF</p>
+      <input id="file" type="file" accept="image/*" class="hidden">
+    </div>
+    <p id="msg" class="mt-3 min-h-5 text-center text-sm font-medium"></p>
+  </section>
+
+  <section id="editor" class="mt-8 hidden">
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <button id="mCrop" class="chip on !px-6 !py-3 !text-base">🔲 Retallar</button>
+      <button id="mErase" class="chip !px-6 !py-3 !text-base">✏️ Esborrar fons a mà</button>
+    </div>
+
+    <div id="rrow" class="glass mt-4 flex flex-wrap items-center justify-center gap-2 p-3">
+      <button class="chip on" data-r="0">Lliure</button>
+      <button class="chip" data-r="1">1:1</button>
+      <button class="chip" data-r="1.3333">4:3</button>
+      <button class="chip" data-r="1.5">3:2</button>
+      <button class="chip" data-r="1.7778">16:9</button>
+      <button class="chip" data-r="0.5625">9:16</button>
+    </div>
+
+    <div id="etools" class="glass mt-4 hidden flex-wrap items-center justify-center gap-4 border-2 border-white p-4 shadow-xl">
+      <label class="text-sm font-medium">Mida del pinzell: <span id="bsVal">30</span>
+        <input id="bs" type="range" min="5" max="120" value="30" class="ml-2 align-middle accent-white">
+      </label>
+      <button id="undo" class="btn btn-ghost">Desfer</button>
+      <p class="w-full text-center text-base font-bold">✏️ Pinta sobre el fons per fer-lo transparent</p>
+      <p class="w-full text-center text-xs text-white/85">Després pots retallar la zona i descarregar-la en PNG.</p>
+    </div>
+
+    <div class="mt-6 flex justify-center">
+      <div id="stage">
+        <canvas id="pic"></canvas>
+        <div id="marker"></div>
+        <div id="crop">
+          <span class="h nw" data-h="nw"></span>
+          <span class="h ne" data-h="ne"></span>
+          <span class="h sw" data-h="sw"></span>
+          <span class="h se" data-h="se"></span>
+        </div>
+      </div>
+    </div>
+
+    <p id="info" class="mt-4 text-center text-sm text-white/85"></p>
+
+    <div class="mt-6 flex flex-col items-center justify-center gap-3 md:flex-row">
+      <select id="fmt" class="rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 font-semibold text-white">
+        <option value="image/png" style="color:#000">PNG (amb transparència)</option>
+        <option value="image/jpeg" style="color:#000">JPG</option>
+        <option value="image/webp" style="color:#000">WEBP</option>
+      </select>
+      <button id="reset" class="btn btn-ghost">Restablir</button>
+      <button id="newBtn" class="btn btn-ghost">Nova foto</button>
+      <button id="dl" class="btn btn-white">Descarrega</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const stage = $('stage'), crop = $('crop'), pic = $('pic');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ctx = () => pic.getContext('2d', { willReadFrequently: true });
+
+let img = null;                 // { el, url, w, h }: el és el canvas de treball
+let fileName = 'foto';
+let aspect = 0;                 // 0 = lliure
+let c = { x: 0, y: 0, w: 1, h: 1 };
+let mode = 'crop';              // 'crop' | 'erase'
+let orig = null;                // píxels originals per restablir
+let history = [];               // per desfer
+let drawing = false, last = null;
+
+// Carregar foto
+const drop = $('drop'), file = $('file');
+drop.onclick = () => file.click();
+$('newBtn').onclick = () => file.click();
+file.onchange = () => { if (file.files[0]) load(file.files[0]); file.value = ''; };
+drop.ondragover = e => { e.preventDefault(); drop.style.background = 'rgba(255,255,255,.3)'; };
+drop.ondragleave = () => { drop.style.background = ''; };
+drop.ondrop = e => { e.preventDefault(); drop.style.background = ''; if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); };
+
+function load(f) {
+  if (!f.type.startsWith('image/')) { $('msg').textContent = 'Aquest fitxer no és una imatge compatible.'; return; }
+  $('msg').textContent = '';
+  const url = URL.createObjectURL(f);
+  const im = new Image();
+  im.onload = () => {
+    if (img) URL.revokeObjectURL(img.url);
+    const k = Math.min(1, 2400 / Math.max(im.naturalWidth, im.naturalHeight)); // límit per a la memòria del mòbil
+    const w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
+    pic.width = w; pic.height = h;
+    ctx().drawImage(im, 0, 0, w, h);
+    orig = ctx().getImageData(0, 0, w, h);
+    history = [];
+    img = { el: pic, url, w, h };
+    fileName = f.name.replace(/\.[^.]+$/, '');
+    $('empty').classList.add('hidden');
+    $('editor').classList.remove('hidden');
+    setMode('crop');
+    c = { x: 0, y: 0, w: 1, h: 1 };
+    if (aspect) fitAspect();
+    place();
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); $('msg').textContent = "No s'ha pogut obrir la imatge. Prova amb un altre fitxer."; };
+  im.src = url;
+}
+
+// Modes
+function setMode(m) {
+  mode = m;
+  $('mCrop').classList.toggle('on', m === 'crop');
+  $('mErase').classList.toggle('on', m === 'erase');
+  $('rrow').classList.toggle('hidden', m === 'erase');
+  $('etools').classList.toggle('hidden', m !== 'erase');
+  $('etools').classList.toggle('flex', m === 'erase');
+  crop.style.display = m === 'erase' ? 'none' : '';
+  pic.style.cursor = m === 'erase' ? 'none' : 'default';
+  if (m !== 'erase') $('marker').style.display = 'none';
+}
+$('mCrop').onclick = () => setMode('crop');
+$('mErase').onclick = () => setMode('erase');
+$('bs').oninput = () => { $('bsVal').textContent = $('bs').value; };
+
+// Esborrar el fons a mà
+function snap() {
+  history.push(ctx().getImageData(0, 0, pic.width, pic.height));
+  if (history.length > 4) history.shift(); // límit de memòria
+}
+$('undo').onclick = () => { if (history.length) ctx().putImageData(history.pop(), 0, 0); };
+
+function pt(e) {
+  const r = pic.getBoundingClientRect(), s = pic.width / r.width;
+  return { x: (e.clientX - r.left) * s, y: (e.clientY - r.top) * s, s };
+}
+function paint(a, b) {
+  const cx = ctx();
+  const radius = (+$('bs').value) * b.s / 2;
+  cx.globalCompositeOperation = 'destination-out';
+  cx.lineCap = 'round'; cx.lineJoin = 'round';
+  cx.lineWidth = radius * 2;
+  cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke();
+  cx.globalCompositeOperation = 'source-over';
+}
+pic.addEventListener('pointerdown', e => {
+  if (mode !== 'erase' || !img) return;
+  e.preventDefault();
+  pic.setPointerCapture(e.pointerId);
+  snap();
+  const p = pt(e);
+  drawing = true; last = p;
+  paint(p, p);
+});
+pic.addEventListener('pointermove', e => {
+  if (mode === 'erase') showMarker(e);
+  if (!drawing) return;
+  const p = pt(e);
+  paint(last, p);
+  last = p;
+});
+function showMarker(e) {
+  const m = $('marker'), sr = stage.getBoundingClientRect(), d = +$('bs').value;
+  m.style.display = 'block';
+  m.style.width = d + 'px';
+  m.style.height = d + 'px';
+  m.style.left = (e.clientX - sr.left) + 'px';
+  m.style.top = (e.clientY - sr.top) + 'px';
+}
+pic.addEventListener('pointerleave', () => { $('marker').style.display = 'none'; });
+const stopPaint = () => { drawing = false; last = null; };
+pic.addEventListener('pointerup', stopPaint);
+pic.addEventListener('pointercancel', stopPaint);
+
+// Relacions d'aspecte
+function fitAspect() {
+  let w = 1, h = img.w / (img.h * aspect);
+  if (h > 1) { h = 1; w = img.h * aspect / img.w; }
+  c = { x: (1 - w) / 2, y: (1 - h) / 2, w, h };
+}
+document.querySelectorAll('.chip[data-r]').forEach(b => b.onclick = () => {
+  aspect = +b.dataset.r;
+  document.querySelectorAll('.chip[data-r]').forEach(x => x.classList.toggle('on', x === b));
+  if (img && aspect) { fitAspect(); place(); }
+});
+
+$('reset').onclick = () => {
+  if (!img) return;
+  if (orig) { ctx().putImageData(orig, 0, 0); history = []; }
+  c = { x: 0, y: 0, w: 1, h: 1 };
+  if (aspect) fitAspect();
+  place();
+};
+
+// Marc de retallada
+function place() {
+  crop.style.left = c.x * 100 + '%';
+  crop.style.top = c.y * 100 + '%';
+  crop.style.width = c.w * 100 + '%';
+  crop.style.height = c.h * 100 + '%';
+  if (img) $('info').textContent = `Mida de la retallada: ${Math.round(c.w * img.w)} × ${Math.round(c.h * img.h)} px`;
+}
+
+let drag = null;
+crop.addEventListener('pointerdown', e => {
+  drag = { mode: e.target.dataset.h || 'move', sx: e.clientX, sy: e.clientY, start: { ...c } };
+  crop.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+crop.addEventListener('pointermove', e => {
+  if (!drag || !img) return;
+  const r = stage.getBoundingClientRect();
+  const dx = (e.clientX - drag.sx) / r.width, dy = (e.clientY - drag.sy) / r.height, s = drag.start;
+  if (drag.mode === 'move') {
+    c.x = clamp(s.x + dx, 0, 1 - s.w);
+    c.y = clamp(s.y + dy, 0, 1 - s.h);
+  } else {
+    const m = drag.mode;
+    let x0 = s.x, y0 = s.y, x1 = s.x + s.w, y1 = s.y + s.h;
+    if (m.includes('w')) x0 = x0 + dx; else x1 = x1 + dx;
+    if (m.includes('n')) y0 = y0 + dy; else y1 = y1 + dy;
+    if (m.includes('w')) x0 = clamp(x0, 0, x1 - 0.05); else x1 = clamp(x1, x0 + 0.05, 1);
+    if (m.includes('n')) y0 = clamp(y0, 0, y1 - 0.05); else y1 = clamp(y1, y0 + 0.05, 1);
+    let w = x1 - x0, h = y1 - y0;
+    if (aspect) {
+      if (w * img.w > aspect * h * img.h) w = h * img.h * aspect / img.w;
+      else h = w * img.w / (img.h * aspect);
+      if (m.includes('w')) x0 = x1 - w; else x1 = x0 + w;
+      if (m.includes('n')) y0 = y1 - h; else y1 = y0 + h;
+    }
+    c = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+  place();
+});
+const endDrag = () => { drag = null; };
+crop.addEventListener('pointerup', endDrag);
+crop.addEventListener('pointercancel', endDrag);
+
+// Descàrrega: usa la capacitat 'downloads' si hi és; si no, el mètode normal
+async function saveFile(blob, name) {
+  try {
+    const dl = window.claude && await window.claude.use('downloads');
+    if (dl) { await dl.save({ filename: name, data: blob }); return; }
+  } catch (e) { if (e && e.code !== 'declined') console.warn(e); return; }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+$('dl').onclick = async () => {
+  if (!img) return;
+  const sx = Math.round(c.x * img.w), sy = Math.round(c.y * img.h);
+  const sw = Math.max(1, Math.round(c.w * img.w)), sh = Math.max(1, Math.round(c.h * img.h));
+  const cv = document.createElement('canvas');
+  cv.width = sw; cv.height = sh;
+  const cx = cv.getContext('2d');
+  const type = $('fmt').value;
+  if (type === 'image/jpeg') { cx.fillStyle = '#fff'; cx.fillRect(0, 0, sw, sh); }
+  cx.drawImage(img.el, sx, sy, sw, sh, 0, 0, sw, sh);
+  const blob = await new Promise(r => cv.toBlob(r, type, 0.92));
+  if (!blob) { $('info').textContent = 'El navegador no pot generar aquest format.'; return; }
+  const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[type];
+  await saveFile(blob, `${fileName}-retallada.${ext}`);
+};
+</script>
+</body>
+</html>
